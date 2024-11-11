@@ -317,7 +317,7 @@ class SlurmExecutor(Executor):
     memory_measure: bool = False
     job_details: SlurmJobDetails = field(default_factory=SlurmJobDetails)
     tunnel: Union[SSHTunnel, LocalTunnel] = field(default_factory=lambda: LocalTunnel(job_dir=""))
-    packager: Packager = field(default_factory=lambda: GitArchivePackager())  # type: ignore
+    packager: Packager = field(default_factory=lambda: Packager())  # type: ignore
     #: List of TorchX app handles that will be parsed and passed to --dependency flag in sbatch.
     dependencies: list[str] = field(default_factory=list)
     dependency_type: str = "afterok"
@@ -848,7 +848,7 @@ class SlurmBatchRequest:
                 if het_stderr:
                     het_stderr[-1] = het_stderr[-1].replace(original_job_name, self.jobs[group_ind])
 
-                _group_srun_args = ["--wait=60", "--kill-on-bad-exit=1"]
+                _group_srun_args = []
                 _group_srun_args.extend(resource_req.srun_args or [])
                 srun_cmd = " ".join(
                     list(
@@ -860,12 +860,8 @@ class SlurmBatchRequest:
                                 "--output",
                                 het_stdout,
                                 *het_stderr,
-                                *get_container_flags(
-                                    base_mounts=resource_req.container_mounts,
-                                    src_job_dir=os.path.join(slurm_job_dir, job_directory_name),
-                                    container_image=resource_req.container_image,
-                                ),
                                 *_group_srun_args,
+                                "singularity exec --bind /n/holyscratch01/dam_lab/brachit/opt_2/opt/:/opt/ --nv /n/holyscratch01/dam_lab/brachit/nemo_dev_2.sif",
                             ],
                         )
                     )
@@ -876,6 +872,7 @@ class SlurmBatchRequest:
                 srun_command = f"{srun_cmd} {command} & pids[{group_ind}]=$!"
                 if group_ind != len(self.slurm_config.resource_group) - 1:
                     srun_command += f"\n\nsleep {self.slurm_config.wait_time_for_group_job}\n"
+                logging.info(f"SRUN COMMAND: {srun_command}")
                 srun_commands.append(srun_command)
             else:
                 cmd_stdout = srun_stdout.replace(original_job_name, self.jobs[group_ind])
@@ -901,7 +898,8 @@ class SlurmBatchRequest:
                         ),
                         container_image=resource_req.container_image,
                     )
-                    _srun_args = ["--wait=60", "--kill-on-bad-exit=1"]
+
+                    _srun_args = []
                     _srun_args.extend(resource_req.srun_args or [])
                 else:
                     _container_flags = get_container_flags(
@@ -912,7 +910,8 @@ class SlurmBatchRequest:
                         ),
                         container_image=self.slurm_config.container_image,
                     )
-                    _srun_args = ["--wait=60", "--kill-on-bad-exit=1"]
+
+                    _srun_args = []
                     _srun_args.extend(self.slurm_config.srun_args or [])
 
                 srun_cmd = " ".join(
@@ -924,8 +923,8 @@ class SlurmBatchRequest:
                                 "--output",
                                 cmd_stdout,
                                 *cmd_stderr,
-                                *_container_flags,
                                 *_srun_args,
+                                "singularity exec --bind /n/holyscratch01/dam_lab/brachit/opt_2/opt/:/opt/ --nv /n/holyscratch01/dam_lab/brachit/nemo_dev_2.sif",
                             ],
                         )
                     )
@@ -939,6 +938,7 @@ class SlurmBatchRequest:
                 else:
                     srun_command = f"{srun_cmd} {command}"
 
+                logging.info(f"SRUN COMMAND: {srun_command}")
                 srun_commands.append(srun_command)
 
         vars_to_fill = {
