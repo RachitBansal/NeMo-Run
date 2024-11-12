@@ -861,7 +861,7 @@ class SlurmBatchRequest:
                                 het_stdout,
                                 *het_stderr,
                                 *_group_srun_args,
-                                "singularity exec --bind /n/holyscratch01/dam_lab/brachit/opt_2/opt/:/opt/ --nv /n/holyscratch01/dam_lab/brachit/nemo_dev_2.sif",
+                                f"singularity exec --bind {os.environ['SINGULARITY_BIND']} --nv {os.environ['SINGULARITY_CONTAINER']}",
                             ],
                         )
                     )
@@ -924,7 +924,7 @@ class SlurmBatchRequest:
                                 cmd_stdout,
                                 *cmd_stderr,
                                 *_srun_args,
-                                "singularity exec --bind /n/holyscratch01/dam_lab/brachit/opt_2/opt/:/opt/ --nv /n/holyscratch01/dam_lab/brachit/nemo_dev_2.sif",
+                                f"singularity exec --bind {os.environ['SINGULARITY_BIND']} --nv {os.environ['SINGULARITY_CONTAINER']}",
                             ],
                         )
                     )

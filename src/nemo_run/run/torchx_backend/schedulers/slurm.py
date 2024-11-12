@@ -119,7 +119,10 @@ class SlurmTunnelScheduler(SchedulerMixin, SlurmScheduler):  # type: ignore
             envs |= role.env
 
         cmd = ["sbatch", "--requeue", "--parsable"]
-        srun_cmds = [[f'python -m nemo_run.core.runners.fdl_runner -n MoEConfig8x3B -p {executor.job_dir}/configs/MoEConfig8x3B_packager {executor.job_dir}/configs/MoEConfig8x3B_fn_or_script']]
+        job_dir = executor.job_dir
+        config_name = executor.job_dir.split("/")[-1]
+
+        srun_cmds = [[f'python -m nemo_run.core.runners.fdl_runner -n {config_name} -p {job_dir}/configs/{config_name}_packager {job_dir}/configs/{config_name}_fn_or_script']]
         req = SlurmBatchRequest(
             cmd=cmd,
             jobs=jobs,
